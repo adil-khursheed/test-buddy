@@ -1,19 +1,52 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Label } from "../../../components/ui/label";
 import { Input } from "../../../components/ui/input";
 import { cn } from "@/lib/utils";
+import { useForm, SubmitHandler } from "react-hook-form";
 import {
   IconBrandGithub,
   IconBrandGoogle,
-  IconBrandOnlyfans,
 } from "@tabler/icons-react";
+import {z} from 'zod'
+import { zodResolver } from "@hookform/resolvers/zod";
 
-export default function SignupFormDemo() {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("Form submitted");
-  };
+const formSchema = z.object({
+  email: z.string().email("Invalid Email Address"),
+  password: z.string()
+  .min(8, { message: 'Password must be at least 8 characters long' })
+  .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\-|=]).*$/, {
+    message: 'Password must contain at least one uppercase, one lowercase, one number, and one special character',
+  }),
+})
+
+type FormData = z.infer<typeof formSchema>
+
+
+export default function Login() {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    defaultValues: {
+      email: "",
+      password: ""
+    },
+    resolver: zodResolver(formSchema),
+  })
+
+  const[isLoading, setIsLoading] = useState(false)
+
+  async function Submit(data: any){
+
+    setIsLoading(true)
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    console.log("Submitting the form", data);
+    setIsLoading(false)
+
+  } 
   return (
     <div className="w-full h-screen flex justify-center items-center bg-gradient-to-br from-[#e7d7f6] via-[#f4e9f9] to-[#deeefc] opacity-80">
     <div className="shadow-2xl mx-auto w-full max-w-md rounded-none p-4 md:rounded-2xl md:p-8 dark:bg-black backdrop-blur-[5px] bg-white">
@@ -24,23 +57,33 @@ export default function SignupFormDemo() {
         Login to Test Buddy
       </p>
 
-      <form className="my-8" onSubmit={handleSubmit}>
+      <form className="my-8" onSubmit={handleSubmit(Submit)}>
         <LabelInputContainer className="mb-4">
           <Label htmlFor="email">Email Address</Label>
-          <Input id="email" placeholder="projectmayhem@fc.com" type="email" />
+          <Input id="email" placeholder="projectmayhem@fc.com" type="email" {...register("email")}/>
+          {errors.email && <p className="text-red-600 text-sm">{errors.email.message}</p>}
         </LabelInputContainer>
         <LabelInputContainer className="mb-4">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" placeholder="••••••••" type="password" />
+          <Input id="password" placeholder="••••••••" type="password" {...register("password")}/>
+          {errors.password && <p className="text-red-600 text-sm">{errors.password.message}</p>}
         </LabelInputContainer>
 
-        <button
+        {isLoading && <button
           className="cursor-pointer group/btn relative block h-10 w-full rounded-md bg-gradient-to-br from-black to-neutral-600 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:bg-zinc-800 dark:from-zinc-900 dark:to-zinc-900 dark:shadow-[0px_1px_0px_0px_#27272a_inset,0px_-1px_0px_0px_#27272a_inset]"
-          type="submit"
+          type="submit" disabled={true} 
+        >
+          Please Wait...
+          <BottomGradient />
+        </button>}
+
+        {!isLoading && <button
+          className="cursor-pointer group/btn relative block h-10 w-full rounded-md bg-gradient-to-br from-black to-neutral-600 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:bg-zinc-800 dark:from-zinc-900 dark:to-zinc-900 dark:shadow-[0px_1px_0px_0px_#27272a_inset,0px_-1px_0px_0px_#27272a_inset]"
+          type="submit" disabled={false} 
         >
           Login &rarr;
           <BottomGradient />
-        </button>
+        </button>}
 
         <div className="my-8 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent dark:via-neutral-700" />
 

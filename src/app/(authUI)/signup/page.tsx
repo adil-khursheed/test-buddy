@@ -1,19 +1,74 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Label } from "../../../components/ui/label";
 import { Input } from "../../../components/ui/input";
 import { cn } from "@/lib/utils";
+import { useForm, SubmitHandler } from "react-hook-form"
+
 import {
   IconBrandGithub,
   IconBrandGoogle,
   IconBrandOnlyfans,
 } from "@tabler/icons-react";
 
-export default function SignupFormDemo() {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("Form submitted");
-  };
+import {z} from 'zod'
+import { zodResolver } from "@hookform/resolvers/zod";
+import { resolve } from "path";
+
+const formSchema = z.object({
+  firstname: z.string().min(1, "First Name is Required"),
+  lastname: z.string().min(1, "Last Name is Required"),
+  email: z.string().email("Invalid Email Address"),
+  password: z.string()
+  .min(8, { message: 'Password must be at least 8 characters long' })
+  .regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\-|=]).*$/, {
+    message: 'Password must contain at least one uppercase, one lowercase, one number, and one special character',
+  }),
+})
+
+type FormData = z.infer<typeof formSchema>;
+
+
+export default function Signup() {
+  
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    defaultValues: {
+      firstname: "",
+      lastname : "",
+      email: "",
+      password: ""
+    },
+    resolver: zodResolver(formSchema),
+  })
+
+  const[isLoading, setIsLoading] = useState(false)
+
+
+  async function Submit(data: any){
+    setIsLoading(true)
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    console.log("Submitting the form", data);
+    setIsLoading(false)
+  }
+
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
+    try{
+      const response = await simulatedApi(data);
+      console.log("Success: ", response);
+    } catch (error : any){
+      console.error("Error: ", error);
+      setError("root", {
+        message: error.message,
+      });
+    }
+  }
+
   return (
     <div className="w-full h-screen flex justify-center items-center bg-gradient-to-br from-[#e7d7f6] via-[#f4e9f9] to-[#deeefc] opacity-80">
     <div className="shadow-2xl mx-auto w-full max-w-md rounded-none p-4 md:rounded-2xl md:p-8 dark:bg-black backdrop-blur-[5px] bg-white">
@@ -24,33 +79,45 @@ export default function SignupFormDemo() {
         Signup to Test Buddy
       </p>
 
-      <form className="my-8" onSubmit={handleSubmit}>
+      <form className="my-8" onSubmit={handleSubmit(Submit)}>
         <div className="mb-4 flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
           <LabelInputContainer>
             <Label htmlFor="firstname">First name</Label>
-            <Input id="firstname" placeholder="Tyler" type="text" />
+            <Input id="firstname" placeholder="Tyler" type="text" {...register("firstname")}/>
+            {errors.firstname && <p className="text-red-600 text-sm">{errors.firstname.message}</p>}
           </LabelInputContainer>
           <LabelInputContainer>
             <Label htmlFor="lastname">Last name</Label>
-            <Input id="lastname" placeholder="Durden" type="text" />
+            <Input id="lastname" placeholder="Durden" type="text" {...register("lastname")}/>
+            {errors.lastname && <p className="text-red-600 text-sm">{errors.lastname.message}</p>}
           </LabelInputContainer>
         </div>
         <LabelInputContainer className="mb-4">
           <Label htmlFor="email">Email Address</Label>
-          <Input id="email" placeholder="projectmayhem@fc.com" type="email" />
+          <Input id="email" placeholder="projectmayhem@fc.com" type="email" {...register("email")}/>
+          {errors.email && <p className="text-red-600 text-sm">{errors.email.message}</p>}
         </LabelInputContainer>
         <LabelInputContainer className="mb-4">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" placeholder="••••••••" type="password" />
+          <Input id="password" placeholder="••••••••" type="password" {...register("password")}/>
+          {errors.password && <p className="text-red-600 text-sm">{errors.password.message}</p>}
         </LabelInputContainer>
 
-        <button
+        {isLoading && <button
           className="cursor-pointer group/btn relative block h-10 w-full rounded-md bg-gradient-to-br from-black to-neutral-600 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:bg-zinc-800 dark:from-zinc-900 dark:to-zinc-900 dark:shadow-[0px_1px_0px_0px_#27272a_inset,0px_-1px_0px_0px_#27272a_inset]"
-          type="submit"
+          type="submit" disabled={true}
+        >
+          Please wait...
+          <BottomGradient />
+        </button>}
+        
+        {!isLoading && <button
+          className="cursor-pointer group/btn relative block h-10 w-full rounded-md bg-gradient-to-br from-black to-neutral-600 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] dark:bg-zinc-800 dark:from-zinc-900 dark:to-zinc-900 dark:shadow-[0px_1px_0px_0px_#27272a_inset,0px_-1px_0px_0px_#27272a_inset]"
+          type="submit" disabled={false}
         >
           Sign up &rarr;
           <BottomGradient />
-        </button>
+        </button>}
 
         <div className="my-8 h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-300 to-transparent dark:via-neutral-700" />
 
@@ -104,3 +171,11 @@ const LabelInputContainer = ({
     </div>
   );
 };
+function simulatedApi(data: { firstname: string; lastname: string; email: string; password: string; }) {
+  throw new Error("Function not implemented.");
+}
+
+function setError(arg0: string, arg1: { message: any; }) {
+  throw new Error("Function not implemented.");
+}
+
